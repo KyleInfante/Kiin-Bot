@@ -1,0 +1,16 @@
+{
+
+  "admin_channel_name": "admin",
+
+
+  "role_names":{
+    "admin": "Admin",
+    "instinct": "Instinct",
+    "valor": "Valor",
+    "mystic": "Mystic"
+    },
+
+
+  "city": "",
+  "state": ""
+}
