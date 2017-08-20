@@ -4,6 +4,7 @@ import de.btobastian.javacord.DiscordAPI;
 import de.btobastian.javacord.Javacord;
 import de.btobastian.javacord.entities.Server;
 import de.btobastian.javacord.entities.permissions.Role;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.InputStream;
@@ -111,15 +112,18 @@ public class Data {
         }
     }
 
+    /**
+     * Read pokemon.json file for the raids pokemon and adds that list to raidPokemonList array
+     */
     private void getRaidPokemonData()
     {
-        JSONObject jsonObj = getJSON("data/pokemon.json");
-        jsonObj = jsonObj.getJSONObject("raids");
-        Iterator x = jsonObj.keys();
+        JSONObject jsonObj = getJSON("pokemondata/pokemon.json");
+        JSONArray arr = jsonObj.getJSONArray("raids");
+        raidPokemonList = new String[arr.length()];
 
-        while(x.hasNext())
+        for(int i = 0 ; i < arr.length(); i++)
         {
-            System.out.println(x.next().toString());
+            raidPokemonList[i] = arr.getString(i);
         }
     }
 
