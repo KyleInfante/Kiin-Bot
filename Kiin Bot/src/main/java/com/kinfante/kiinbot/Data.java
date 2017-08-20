@@ -72,7 +72,20 @@ public class Data {
         getRaidPokemonData();
     }
 
-    //****************  Data Retrieval from JSON files.
+    public String FindPokemonName(String name)
+    {
+        for(int i = 0; i < raidPokemonList.length; i++)
+        {
+            String pokemon = raidPokemonList[i];
+            if(name.toLowerCase() == pokemon.toLowerCase())
+            {
+                return pokemon;
+            }
+        }
+        return "";
+    }
+
+    //region  Data Retrieval from JSON files.
     private void getRoleData()
     {
         JSONObject jsonObj = getJSON("configs/appdata.json");
@@ -166,4 +179,5 @@ public class Data {
 
         return contents.toString();
     }
+    //endregion
 }

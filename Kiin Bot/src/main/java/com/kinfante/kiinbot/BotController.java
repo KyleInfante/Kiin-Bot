@@ -10,8 +10,6 @@ import java.util.Scanner;
 
 public class BotController
 {
-    private String botToken;
-
     private DiscordAPI api;
 
     public BotController()

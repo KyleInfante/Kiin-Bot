@@ -2,13 +2,10 @@ package com.kinfante.kiinbot;
 
 import com.google.common.util.concurrent.FutureCallback;
 import de.btobastian.javacord.entities.Channel;
-import de.btobastian.javacord.entities.Server;
 import de.btobastian.javacord.entities.message.MessageBuilder;
-import de.btobastian.javacord.entities.permissions.Role;
 import de.btobastian.sdcf4j.Command;
 import de.btobastian.sdcf4j.CommandExecutor;
 import java.time.LocalDateTime;
-import java.util.Collection;
 
 public class RaidCommands implements CommandExecutor
 {
@@ -17,17 +14,20 @@ public class RaidCommands implements CommandExecutor
     {
     }
 
-
     @Command(aliases = {"!raid", "!r"}, description = "Raid")
     public String onRaidCommand(String command, String[] args)
     {
-        String retVal;
-
         if(args.length != 3)
-            return "Invalid raid command. Try typing your command like this " +
+            return "Invalid raid command. Try typing your command like this: " +
                     "\"!raid <PokemonName> <Location> <TimeLeft>\"";
 
-        BuildRaidChannel(args[0],args[1], LocalDateTime.now());
+        String pokemonName = Data._singleton.FindPokemonName(args[0]);
+        if(pokemonName == "")
+        {
+            return args[0] + " is not in the raid list. Be sure to check your spelling.";
+        }
+
+        BuildRaidChannel(pokemonName,args[1], LocalDateTime.now());
         return "Raid Command Worked!";
     }
 
