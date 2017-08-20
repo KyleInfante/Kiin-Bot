@@ -18,11 +18,13 @@ public class BotController
     {
         //Stores the data into this object
         Data data = new Data();
+        data.initApi();
+        api = data.getApi();
     }
 
     public void StartRaidBot()
     {
-        RaidBot raidBot = new RaidBot();
+        RaidBot raidBot = new RaidBot(api);
         raidBot.Start();
     }
 }

@@ -33,17 +33,17 @@ public class Data {
     }
 
     /**
-     * Only runs on the start of the bot
+     * Runs on the start of the bot
      */
     public void init()
     {
         //Get the server object
         Collection<Server> collS = api.getServers();
         Server[] servers = collS.toArray(new Server[collS.size()]);
-        Data._singleton.server = servers[0];
+        server = servers[0];
 
         getRoleData();
-        getRaidPokemonData();
+        update();
     }
 
     /**
@@ -58,34 +58,55 @@ public class Data {
         api.setGame("Pokemon GO");
     }
 
+    public DiscordAPI getApi()
+    {
+        return api;
+    }
+
     /**
      * Parse the pokemon.json and types.json
      */
     public void update()
     {
-
+        getRaidPokemonData();
     }
-
 
     //****************  Data Retrieval from JSON files.
     private void getRoleData()
     {
+        JSONObject jsonObj = getJSON("configs/appdata.json");
+        jsonObj = jsonObj.getJSONObject("role_names");
+
         //Role objects
         Collection<Role> collR = server.getRoles();
         Role[] roles = collR.toArray(new Role[collR.size()]);
 
         for(int i = 0; i < roles.length; i++)
         {
-            switch(roles[i].getName().toLowerCase())
+            String roleName = roles[i].getName().toLowerCase();
+
+            if(roleName == jsonObj.get("admin").toString().toLowerCase())
             {
-                case("admin"): {
-                    adminRole = roles[i]; break;}
-                case("instinct"): {
-                    instinctRole = roles[i]; break;}
-                case("valor"): {
-                    valorRole = roles[i]; break;}
-                case("mystic"): {
-                    mysticRole = roles[i]; break;}
+                adminRole = roles[i];
+                continue;
+            }
+
+            if(roleName == jsonObj.get("instinct").toString().toLowerCase())
+            {
+                instinctRole = roles[i];
+                continue;
+            }
+
+            if(roleName == jsonObj.get("valor").toString().toLowerCase())
+            {
+                valorRole = roles[i];
+                continue;
+            }
+
+            if(roleName == jsonObj.get("mystic").toString().toLowerCase())
+            {
+                mysticRole = roles[i];
+                continue;
             }
         }
     }
@@ -93,17 +114,13 @@ public class Data {
     private void getRaidPokemonData()
     {
         JSONObject jsonObj = getJSON("data/pokemon.json");
+        jsonObj = jsonObj.getJSONObject("raids");
         Iterator x = jsonObj.keys();
 
         while(x.hasNext())
         {
             System.out.println(x.next().toString());
         }
-    }
-
-    public DiscordAPI getAPI()
-    {
-        return api;
     }
 
     /**

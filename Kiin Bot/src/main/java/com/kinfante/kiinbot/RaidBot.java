@@ -12,8 +12,9 @@ public class RaidBot {
 
     private DiscordAPI api;
 
-    public RaidBot()
+    public RaidBot(DiscordAPI api)
     {
+        this.api = api;
     }
 
     /***
@@ -24,10 +25,7 @@ public class RaidBot {
         api.connect(new FutureCallback<DiscordAPI>() {
             public void onSuccess(DiscordAPI discordAPI) {
                 System.out.println("Kiin is online!");
-                Data._singleton.initApi();
                 Data._singleton.init();
-
-                api = Data._singleton.getAPI();
                 EnableCommands();
             }
 
