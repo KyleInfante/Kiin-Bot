@@ -23,36 +23,42 @@ public class RaidCommands implements CommandExecutor
     @Command(aliases = {"!raid", "!r"}, description = "Raid")
     public String onRaidCommand(String command, String[] args)
     {
-        if(args.length != 3)
+        //make sure raid command has at least 3 arguments
+        if(args.length < 3)
             return "Invalid raid command. Try typing your command like this: " +
                     "\"!raid PokemonName Location TimeLeft\"";
 
-        String pokemonName = Data._singleton.FindPokemonName(args[0]);
+        //Get Pokemon Name from list
+        String pokemonName = checkPokemonName(args);
         if(pokemonName == "")
-        {
             return args[0] + " is not in the raid list. Be sure to check your spelling.";
-        }
 
-        Time time = Data._singleton.getTime(args[2]);
 
-        if(args[2].replace(":", "").length() > 5 || time == null)
+        //Get time
+        Time time = Data._singleton.getTime(args[args.length - 1]);
+        if(args[args.length - 1].replace(":", "").length() > 4 || time == null)
             return "Time is in the wrong format.  Try typing it like this \"HHmm\" or \"HH:mm\"";
 
-        BuildRaidChannel(pokemonName,args[1], time);
+        //Get location
+        int index = pokemonName.split(" ").length;
+        String loc = checkLocation(args, index);
+
+        //Now build the channel
+        BuildRaidChannel(pokemonName, loc, time);
         return "Raid Command Worked!";
     }
 
-    private void BuildRaidChannel(String pokemon, String location, Time time)
+    private void BuildRaidChannel(String pokemonName, String location, Time exprTime)
     {
-
-        Data._singleton.server.createChannel("raid_" + pokemon + "_" + location, new FutureCallback<Channel>() {
+        Data._singleton.server.createChannel("raid_" + pokemonName.replace(" ", "_") + "_" +
+                location.replace(" ", "_"), new FutureCallback<Channel>() {
             @Override
             public void onSuccess(Channel channel)
             {
                 MessageBuilder message = new MessageBuilder();
                 message.appendRole(Data._singleton.adminRole);
-                message.append("A " + pokemon + " raid has popped up at " + location);
-                channel.updateTopic(pokemon + " raid located at " + location + ". Channel expires at " + time);
+                message.append("A " + pokemonName + " raid has popped up at " + location);
+                channel.updateTopic(pokemonName + " raid located at " + location + " until ~" + exprTime);
                 channel.sendMessage( message.toString() );
             }
 
@@ -61,6 +67,37 @@ public class RaidCommands implements CommandExecutor
                 throwable.printStackTrace();
             }
         });
+    }
 
+    /**
+     * Checking the pokemon name if it exists in the raid list.
+     * If it doesn't, it will check if the pokemon is a two worded name
+     * @param args the list of arguments in the raid command.
+     * @return the pokemon name
+     */
+    private String checkPokemonName(String[] args)
+    {
+        //Check for single worded name
+        String pokemonName = Data._singleton.FindPokemonName(args[0]);
+
+        //Check if not found, check for two worded name
+        if(args.length > 3 && pokemonName == "")
+        {
+            pokemonName = Data._singleton.FindPokemonName(args[0] + " " + args[1]);
+        }
+
+        return pokemonName;
+    }
+
+    private String checkLocation(String[] args, int index)
+    {
+        String location = args[index];
+        index++;
+        for(int i = index; i < args.length - 1; i++)
+            {
+            location += " " + args[i];
+        }
+
+        return location;
     }
 }

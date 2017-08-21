@@ -39,6 +39,6 @@ public class RaidBot {
     {
         CommandHandler cmdHandler = new JavacordHandler(api);
         cmdHandler.registerCommand(new RaidCommands());
-
+        cmdHandler.registerCommand(new AdminCommands());
     }
 }

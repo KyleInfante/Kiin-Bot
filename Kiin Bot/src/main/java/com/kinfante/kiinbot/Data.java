@@ -4,17 +4,14 @@ import de.btobastian.javacord.DiscordAPI;
 import de.btobastian.javacord.Javacord;
 import de.btobastian.javacord.entities.Server;
 import de.btobastian.javacord.entities.permissions.Role;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 
+import java.io.FileReader;
 import java.io.InputStream;
 import java.sql.Time;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.spi.CalendarDataProvider;
 
 public class Data {
 
@@ -57,7 +54,7 @@ public class Data {
      */
     public void initApi()
     {
-        JSONObject jsonObj = getJSON("configs/auth.json");
+        JSONObject jsonObj = getJSON("data\\configs\\auth.json");
         botToken = jsonObj.get("bot-token").toString();
         api = Javacord.getApi(botToken, true);
         api.setGame("Pokemon GO");
@@ -81,7 +78,8 @@ public class Data {
         for(int i = 0; i < raidPokemonList.length; i++)
         {
             String pokemon = raidPokemonList[i];
-            if(name.equalsIgnoreCase(pokemon))
+            String pokemonNoSpace = raidPokemonList[i].replace(" ", "");
+            if(name.equalsIgnoreCase(pokemon) || name.equalsIgnoreCase(pokemonNoSpace))
             {
                 return pokemon;
             }
@@ -98,15 +96,13 @@ public class Data {
     public Time getTime(String time)
     {
         Time t = null;
-        int hours ;
-        int minutes ;
         time = time.replace(":", "");
         time = ("0000" + time).substring(time.length());
 
         try
         {
-            minutes = Integer.parseInt(time.substring(2, 4));
-            hours = Integer.parseInt(time.substring(0,2));
+            int minutes = Integer.parseInt(time.substring(2, 4));
+            int hours = Integer.parseInt(time.substring(0,2));
 
             Calendar cal = Calendar.getInstance();
             cal.add(Calendar.HOUR_OF_DAY, hours);
@@ -116,6 +112,7 @@ public class Data {
         catch(Exception e)
         {
             e.printStackTrace();
+            t = null;
         }
 
         return t;
@@ -124,8 +121,8 @@ public class Data {
     //region  Data Retrieval from JSON files.
     private void getRoleData()
     {
-        JSONObject jsonObj = getJSON("configs/appdata.json");
-        jsonObj = jsonObj.getJSONObject("role_names");
+        JSONObject jsonObj = getJSON("data\\configs\\appdata.json");
+        jsonObj = (JSONObject)jsonObj.get("role_names");
 
         //Role objects
         Collection<Role> collR = server.getRoles();
@@ -166,13 +163,14 @@ public class Data {
      */
     private void getRaidPokemonData()
     {
-        JSONObject jsonObj = getJSON("pokemondata/pokemon.json");
-        JSONArray arr = jsonObj.getJSONArray("raids");
-        raidPokemonList = new String[arr.length()];
+        JSONObject jsonObj = getJSON("data\\pokemondata\\pokemon.json");
+        JSONArray arr = (JSONArray)jsonObj.get("raids");
+        raidPokemonList = new String[arr.size()];
 
-        for(int i = 0 ; i < arr.length(); i++)
+        for(int i = 0 ; i < arr.size(); i++)
         {
-            raidPokemonList[i] = arr.getString(i);
+            System.out.println(arr.get(i).toString());
+            raidPokemonList[i] = arr.get(i).toString();
         }
     }
 
@@ -182,10 +180,19 @@ public class Data {
      */
     protected JSONObject getJSON(String path)
     {
-        ClassLoader cl = getClass().getClassLoader();
-        InputStream stream = cl.getResourceAsStream(path);
-        String fileContents = getFileContents(stream);
-        JSONObject jsonObj = new JSONObject(fileContents);
+        /*ClassLoader cl = getClass().getClassLoader();
+        InputStream stream = cl.getResourceAsStream(path);*/
+        JSONObject jsonObj = null;
+        try
+        {
+            JSONParser parser = new JSONParser();
+            jsonObj = (JSONObject)parser.parse(new FileReader(path));
+        }
+        catch(Exception e)
+        {
+            e.printStackTrace();
+        }
+
         return jsonObj;
     }
 
