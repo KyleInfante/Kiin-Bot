@@ -8,9 +8,13 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.InputStream;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Scanner;
+import java.sql.Time;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.spi.CalendarDataProvider;
 
 public class Data {
 
@@ -77,12 +81,44 @@ public class Data {
         for(int i = 0; i < raidPokemonList.length; i++)
         {
             String pokemon = raidPokemonList[i];
-            if(name.toLowerCase() == pokemon.toLowerCase())
+            if(name.equalsIgnoreCase(pokemon))
             {
                 return pokemon;
             }
         }
         return "";
+    }
+
+    /**
+     * Converts the given time string into hours and minutes, and then adds that time to the current time
+     *
+     * @param  time string of time value
+     * @return time value added to current time.
+     */
+    public Time getTime(String time)
+    {
+        Time t = null;
+        int hours ;
+        int minutes ;
+        time = time.replace(":", "");
+        time = ("0000" + time).substring(time.length());
+
+        try
+        {
+            minutes = Integer.parseInt(time.substring(2, 4));
+            hours = Integer.parseInt(time.substring(0,2));
+
+            Calendar cal = Calendar.getInstance();
+            cal.add(Calendar.HOUR_OF_DAY, hours);
+            cal.add(Calendar.MINUTE, minutes);
+            t = new Time(cal.getTime().getTime());
+        }
+        catch(Exception e)
+        {
+            e.printStackTrace();
+        }
+
+        return t;
     }
 
     //region  Data Retrieval from JSON files.
@@ -97,27 +133,27 @@ public class Data {
 
         for(int i = 0; i < roles.length; i++)
         {
-            String roleName = roles[i].getName().toLowerCase();
+            String roleName = roles[i].getName();
 
-            if(roleName == jsonObj.get("admin").toString().toLowerCase())
+            if(roleName.equalsIgnoreCase(jsonObj.get("admin").toString()))
             {
                 adminRole = roles[i];
                 continue;
             }
 
-            if(roleName == jsonObj.get("instinct").toString().toLowerCase())
+            if(roleName.equalsIgnoreCase(jsonObj.get("instinct").toString().toLowerCase()))
             {
                 instinctRole = roles[i];
                 continue;
             }
 
-            if(roleName == jsonObj.get("valor").toString().toLowerCase())
+            if(roleName.equalsIgnoreCase(jsonObj.get("valor").toString().toLowerCase()))
             {
                 valorRole = roles[i];
                 continue;
             }
 
-            if(roleName == jsonObj.get("mystic").toString().toLowerCase())
+            if(roleName.equalsIgnoreCase(jsonObj.get("mystic").toString().toLowerCase()))
             {
                 mysticRole = roles[i];
                 continue;

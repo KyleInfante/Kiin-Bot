@@ -5,7 +5,13 @@ import de.btobastian.javacord.entities.Channel;
 import de.btobastian.javacord.entities.message.MessageBuilder;
 import de.btobastian.sdcf4j.Command;
 import de.btobastian.sdcf4j.CommandExecutor;
+
+import java.sql.Time;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
+import java.util.Calendar;
+import java.util.Date;
 
 public class RaidCommands implements CommandExecutor
 {
@@ -19,7 +25,7 @@ public class RaidCommands implements CommandExecutor
     {
         if(args.length != 3)
             return "Invalid raid command. Try typing your command like this: " +
-                    "\"!raid <PokemonName> <Location> <TimeLeft>\"";
+                    "\"!raid PokemonName Location TimeLeft\"";
 
         String pokemonName = Data._singleton.FindPokemonName(args[0]);
         if(pokemonName == "")
@@ -27,20 +33,26 @@ public class RaidCommands implements CommandExecutor
             return args[0] + " is not in the raid list. Be sure to check your spelling.";
         }
 
-        BuildRaidChannel(pokemonName,args[1], LocalDateTime.now());
+        Time time = Data._singleton.getTime(args[2]);
+
+        if(args[2].replace(":", "").length() > 5 || time == null)
+            return "Time is in the wrong format.  Try typing it like this \"HHmm\" or \"HH:mm\"";
+
+        BuildRaidChannel(pokemonName,args[1], time);
         return "Raid Command Worked!";
     }
 
-    private void BuildRaidChannel(String pokemon, String location, LocalDateTime dt)
+    private void BuildRaidChannel(String pokemon, String location, Time time)
     {
 
-        Data._singleton.server.createChannel("RAID_" + pokemon + "_" + location, new FutureCallback<Channel>() {
+        Data._singleton.server.createChannel("raid_" + pokemon + "_" + location, new FutureCallback<Channel>() {
             @Override
             public void onSuccess(Channel channel)
             {
                 MessageBuilder message = new MessageBuilder();
                 message.appendRole(Data._singleton.adminRole);
                 message.append("A " + pokemon + " raid has popped up at " + location);
+                channel.updateTopic(pokemon + " raid located at " + location + ". Channel expires at " + time);
                 channel.sendMessage( message.toString() );
             }
 
