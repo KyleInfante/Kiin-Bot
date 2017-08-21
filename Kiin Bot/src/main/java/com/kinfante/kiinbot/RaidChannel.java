@@ -29,7 +29,7 @@ public class RaidChannel implements CommandExecutor
             if(args.length > 0)
                 try
                 {
-                    int minutes = Integer.parseInt(args[1]);
+                    int minutes = Integer.parseInt(args[0]);
                     otwEtas.add(minutes);
                 }
                 catch(Exception e)
@@ -49,12 +49,16 @@ public class RaidChannel implements CommandExecutor
     @Command(aliases = {"!otw"}, description = "Who's on the way!?")
     public String onOtw(String command, String[] args, Channel c)
     {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder("");
         if(c == this.channel)
         {
             for(int i = 0 ;  i < onTheWay.size(); i++)
             {
-                sb.append(onTheWay.get(i).getName() + " in " + otwEtas.get(i).toString() + " minutes.\n");
+                sb.append(onTheWay.get(i).getName());
+                if(otwEtas.get(i) != null)
+                    sb.append(" in " + otwEtas.get(i).toString() + " minutes.\n");
+                else
+                    sb.append("\n");
             }
         }
         return sb.toString();
