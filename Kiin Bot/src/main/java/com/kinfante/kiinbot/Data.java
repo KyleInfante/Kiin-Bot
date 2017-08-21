@@ -93,29 +93,21 @@ public class Data {
      * @param  time string of time value
      * @return time value added to current time.
      */
-    public Time getTime(String time)
+    public Calendar getTime(int minutes)
     {
-        Time t = null;
-        time = time.replace(":", "");
-        time = ("0000" + time).substring(time.length());
+        Calendar cal = Calendar.getInstance();
 
         try
         {
-            int minutes = Integer.parseInt(time.substring(2, 4));
-            int hours = Integer.parseInt(time.substring(0,2));
-
-            Calendar cal = Calendar.getInstance();
-            cal.add(Calendar.HOUR_OF_DAY, hours);
             cal.add(Calendar.MINUTE, minutes);
-            t = new Time(cal.getTime().getTime());
         }
         catch(Exception e)
         {
             e.printStackTrace();
-            t = null;
+            cal = null;
         }
 
-        return t;
+        return cal;
     }
 
     //region  Data Retrieval from JSON files.
@@ -169,7 +161,6 @@ public class Data {
 
         for(int i = 0 ; i < arr.size(); i++)
         {
-            System.out.println(arr.get(i).toString());
             raidPokemonList[i] = arr.get(i).toString();
         }
     }

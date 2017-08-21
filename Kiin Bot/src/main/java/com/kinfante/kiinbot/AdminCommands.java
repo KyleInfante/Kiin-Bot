@@ -10,6 +10,6 @@ public class AdminCommands implements CommandExecutor {
     public String onAdminUpdateCommand(String command, String[] args)
     {
         Data._singleton.update();
-        return "Data successfully updated!";
+        return "Pokemon raid list has been successfully updated!";
     }
 }

@@ -5,19 +5,20 @@ import de.btobastian.javacord.entities.Channel;
 import de.btobastian.javacord.entities.message.MessageBuilder;
 import de.btobastian.sdcf4j.Command;
 import de.btobastian.sdcf4j.CommandExecutor;
+import de.btobastian.sdcf4j.CommandHandler;
+import de.btobastian.sdcf4j.handler.JavacordHandler;
 
 import java.sql.Time;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
 import java.util.Calendar;
-import java.util.Date;
 
 public class RaidCommands implements CommandExecutor
 {
 
-    public RaidCommands()
+    RaidBot rb;
+
+    public RaidCommands(RaidBot rb)
     {
+        this.rb = rb;
     }
 
     @Command(aliases = {"!raid", "!r"}, description = "Raid")
@@ -33,33 +34,48 @@ public class RaidCommands implements CommandExecutor
         if(pokemonName == "")
             return args[0] + " is not in the raid list. Be sure to check your spelling.";
 
+        String time = args[args.length - 1].replace(":", "");
+        int length = time.length();
+        time = ("0000" + time).substring(time.length());
+        int minutes = Integer.parseInt(time.substring(2, 4));
+        int hours = Integer.parseInt(time.substring(0,2));
+        minutes += (hours * 60);
 
-        //Get time
-        Time time = Data._singleton.getTime(args[args.length - 1]);
-        if(args[args.length - 1].replace(":", "").length() > 4 || time == null)
+        //Get expire time
+        Calendar cal = Data._singleton.getTime(minutes);
+
+        if(time == null || length > 4)
             return "Time is in the wrong format.  Try typing it like this \"HHmm\" or \"HH:mm\"";
+
+        //Time cannot be larger than two hours.
+        if(minutes > 120) return "The time left should never be larger than 2 hours.";
+
+        Time exprTime = new Time(cal.getTime().getTime());
 
         //Get location
         int index = pokemonName.split(" ").length;
         String loc = checkLocation(args, index);
 
         //Now build the channel
-        BuildRaidChannel(pokemonName, loc, time);
+        BuildRaidChannel(pokemonName, loc, exprTime, minutes);
         return "Raid Command Worked!";
     }
 
-    private void BuildRaidChannel(String pokemonName, String location, Time exprTime)
+    private void BuildRaidChannel(String pokemonName, String location, Time exprTime, int minutes)
     {
-        Data._singleton.server.createChannel("raid_" + pokemonName.replace(" ", "_") + "_" +
-                location.replace(" ", "_"), new FutureCallback<Channel>() {
+        String channelName = "raid_" + pokemonName.replace(" ", "_") + "_" + location.replace(" ", "_");
+        Data._singleton.server.createChannel(channelName, new FutureCallback<Channel>() {
             @Override
             public void onSuccess(Channel channel)
             {
                 MessageBuilder message = new MessageBuilder();
                 message.appendRole(Data._singleton.adminRole);
-                message.append("A " + pokemonName + " raid has popped up at " + location);
+                message.append(" A " + pokemonName + " raid has been spotted at " + location);
                 channel.updateTopic(pokemonName + " raid located at " + location + " until ~" + exprTime);
                 channel.sendMessage( message.toString() );
+                RaidChannel t = new RaidChannel();
+                rb.EnableChannelCommands(t);
+                t.SetTimer(minutes, channel);
             }
 
             @Override

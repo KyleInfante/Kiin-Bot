@@ -7,10 +7,12 @@ import de.btobastian.sdcf4j.*;
 import de.btobastian.sdcf4j.handler.JavacordHandler;
 
 import java.util.Collection;
+import java.util.concurrent.Callable;
 
 public class RaidBot {
 
     private DiscordAPI api;
+    private CommandHandler cmdHandler;
 
     public RaidBot(DiscordAPI api)
     {
@@ -37,8 +39,13 @@ public class RaidBot {
 
     private void EnableCommands()
     {
-        CommandHandler cmdHandler = new JavacordHandler(api);
-        cmdHandler.registerCommand(new RaidCommands());
+        cmdHandler = new JavacordHandler(api);
+        cmdHandler.registerCommand(new RaidCommands(this));
         cmdHandler.registerCommand(new AdminCommands());
+    }
+
+    public void EnableChannelCommands(RaidChannel raidChannel)
+    {
+        cmdHandler.registerCommand(raidChannel);
     }
 }
