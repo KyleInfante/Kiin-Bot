@@ -13,7 +13,6 @@ import java.util.Calendar;
 
 public class RaidCommands implements CommandExecutor
 {
-
     RaidBot rb;
 
     public RaidCommands(RaidBot rb)
