@@ -69,8 +69,8 @@ public class RaidCommands implements CommandExecutor
             {
                 MessageBuilder message = new MessageBuilder();
                 message.appendRole(Data._singleton.adminRole);
-                message.append(" A " + pokemonName + " raid has been spotted at " + location);
-                channel.updateTopic(pokemonName + " raid located at " + location + " until ~" + exprTime);
+                message.append(" A " + pokemonName + " raid has been spotted at " + location + " until ~" + exprTime);
+                channel.updateTopic("A " + pokemonName + " raid has been spotted at " + location + " until ~" + exprTime);
                 channel.sendMessage( message.toString() );
                 RaidChannel t = new RaidChannel();
                 rb.EnableChannelCommands(t);
