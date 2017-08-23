@@ -2,7 +2,6 @@
 
   "admin_channel_name": "admin",
 
-
   "role_names":{
     "admin": "Admin",
     "instinct": "Instinct",
@@ -10,7 +9,29 @@
     "mystic": "Mystic"
     },
 
-
   "city": "",
-  "state": ""
+  "state": "",
+
+  "icons":{
+    "raid": "<:raid:349992471654039562>",
+    "normal": "<:normal:349986013273128962>",
+    "fire": "<:fire1:349986013315072000>",
+    "water": "<:water:349986013243768836>",
+    "electric": "<:electric:349986012837183519>",
+    "grass": "<:grass:349986013688496129>",
+    "ice": "<:ice:349986013583507476>",
+    "fighting": "<:fighting:349986013323722763>",
+    "poison": "<:poison:349986013659267073>",
+    "ground": "<:ground:349986013218603018>",
+    "flying": "<:flying:349986013470261248>",
+    "psychic": "<:psychic:349986013462003713>",
+    "bug": "<:bug1:349986011779956737>",
+    "rock": "<:rock:349986013587963904>",
+    "ghost": "<:ghost1:349986013302489120>",
+    "dragon": "<:dragon1:349986012249849856>",
+    "dark": "<:dark:349986012153511965>",
+    "steel": "<:steel:349986013554278410>",
+    "fairy": "<:fairy:349986013575249931>"
+  }
+
 }

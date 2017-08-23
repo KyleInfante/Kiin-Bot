@@ -10,14 +10,15 @@ import org.json.simple.JSONObject;
 
 import java.io.FileReader;
 import java.io.InputStream;
-import java.sql.Time;
 import java.util.*;
 
 public class Data {
 
     protected static Data _singleton;
 
-    protected String[] raidPokemonList;
+    protected JSONArray raidPokemonList;
+    protected JSONObject pokemonList;
+    protected JSONObject pokeTypesList;
     protected Role adminRole;
     protected Role instinctRole;
     protected Role mysticRole;
@@ -45,6 +46,7 @@ public class Data {
         server = servers[0];
 
         getRoleData();
+        getTypesData();
         update();
     }
 
@@ -73,24 +75,34 @@ public class Data {
         getRaidPokemonData();
     }
 
-    public String FindPokemonName(String name)
+    public String FindRaidPokemonName(String name)
     {
-        for(int i = 0; i < raidPokemonList.length; i++)
+        String pName = "";
+        int index = raidPokemonList.indexOf(name);
+        System.out.println(index);
+        if(index != -1)
         {
-            String pokemon = raidPokemonList[i];
-            String pokemonNoSpace = raidPokemonList[i].replace(" ", "");
-            if(name.equalsIgnoreCase(pokemon) || name.equalsIgnoreCase(pokemonNoSpace))
+            pName = raidPokemonList.get(index).toString();
+            String[] splits = pName.trim().split(" ");
+            if(splits.length > 1)
             {
-                return pokemon;
+                String first = splits[0].substring(0,1).toUpperCase() + splits[0].substring(1);
+                String second = splits[1].substring(0,1).toUpperCase() + splits[1].substring(1);
+                pName = first + " " + second;
+            }
+            else
+            {
+                pName = pName.substring(0,1).toUpperCase() + pName.substring(1);
             }
         }
-        return "";
+        System.out.println(pName);
+        return pName;
     }
 
     /**
      * Converts the given time string into hours and minutes, and then adds that time to the current time
      *
-     * @param  time string of time value
+     * @param minutes number of minutes raid will remain up
      * @return time value added to current time.
      */
     public Calendar getTime(int minutes)
@@ -150,19 +162,20 @@ public class Data {
         }
     }
 
+    private void getTypesData()
+    {
+        JSONObject jsonObj = getJSON("data\\pokemondata\\types.json");
+        pokeTypesList = (JSONObject)jsonObj.get("types");
+    }
+
     /**
      * Read pokemon.json file for the raids pokemon and adds that list to raidPokemonList array
      */
     private void getRaidPokemonData()
     {
         JSONObject jsonObj = getJSON("data\\pokemondata\\pokemon.json");
-        JSONArray arr = (JSONArray)jsonObj.get("raids");
-        raidPokemonList = new String[arr.size()];
-
-        for(int i = 0 ; i < arr.size(); i++)
-        {
-            raidPokemonList[i] = arr.get(i).toString();
-        }
+        raidPokemonList = (JSONArray)jsonObj.get("raids");
+        pokemonList = (JSONObject)jsonObj.get("pokemon_list");
     }
 
     /**

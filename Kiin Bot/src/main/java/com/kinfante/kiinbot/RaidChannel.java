@@ -111,16 +111,31 @@ public class RaidChannel implements CommandExecutor
         String hereMsg = "";
         if(c == this.channel && onTheWay.contains(user))
         {
-            System.out.println(onTheWay.size());
             int i = getOtwIndex(user);
             if(i == -1) return "";
             onTheWay.remove(i);
             otwEtas.remove(i);
             timeOtw.remove(i);
             hereMsg = user.getName() + " has arrived.";
-            System.out.println(onTheWay.size());
         }
         return hereMsg;
+    }
+
+    @Command(aliases = {"!cancel", "!c"}, description = "I will not be able to make it.")
+    public String onCancel(String command, String[] args, Channel c, Message msg, User user)
+    {
+        msg.delete();
+        String cancelMsg = "";
+        if(c == this.channel && onTheWay.contains(user))
+        {
+            int i = getOtwIndex(user);
+            if(i == -1) return "";
+            onTheWay.remove(i);
+            otwEtas.remove(i);
+            timeOtw.remove(i);
+            cancelMsg = user.getName() + " is no longer on the way";
+        }
+        return cancelMsg;
     }
 
     /**
