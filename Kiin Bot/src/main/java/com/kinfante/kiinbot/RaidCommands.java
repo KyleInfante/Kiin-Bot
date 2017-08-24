@@ -19,7 +19,7 @@ public class RaidCommands implements CommandExecutor
 
     String raidCountersPath = "https://pokemongo.gamepress.gg/pokemon/";
     String raidCountersPathEnd = "#raid-boss-counters";
-    String pokemonThumbnail= "https://pokemongo.gamepress.gg/sites/default/files/styles/240w/public/2016-07/";
+    String pokemonThumbnail= "https://poketoolset.com/assets/img/pokemon/images/";
 
     public RaidCommands(RaidBot rb)
     {
@@ -80,14 +80,13 @@ public class RaidCommands implements CommandExecutor
                 JSONArray typesArray = (JSONArray)jsonObj.get("types");
                 String counterUrl = raidCountersPath + id + raidCountersPathEnd;
                 String thumbnailUrl = pokemonThumbnail + id + ".png";
-                System.out.println(thumbnailUrl);
                 String typeString = Data._singleton.getPokemonTypeString(typesArray);
                 String weaknessesString = Data._singleton.getPokemonWeaknessesString(typesArray);
                 EmbedBuilder embed = new EmbedBuilder();
-                embed.setAuthor(pokemonName);
+                embed.setTitle(pokemonName + " Raid Information");
                 embed.setThumbnail(thumbnailUrl);
                 embed.addField("Counter Information", "["+ pokemonName +" Counters](" + counterUrl + ")", false);
-                embed.addField("Types", typeString, true);
+                embed.addField("Types", typeString, false);
                 //embed.addField("Weaknesses", weaknessesString, true);
                 embed.setColor(Color.CYAN);
                 //embed.setDescription("This is a description.");
