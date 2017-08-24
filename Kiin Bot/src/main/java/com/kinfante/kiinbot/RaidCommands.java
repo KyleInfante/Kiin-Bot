@@ -2,12 +2,12 @@ package com.kinfante.kiinbot;
 
 import com.google.common.util.concurrent.FutureCallback;
 import de.btobastian.javacord.entities.Channel;
-import de.btobastian.javacord.entities.InviteBuilder;
-import de.btobastian.javacord.entities.User;
 import de.btobastian.javacord.entities.message.Message;
 import de.btobastian.javacord.entities.message.embed.EmbedBuilder;
 import de.btobastian.sdcf4j.Command;
 import de.btobastian.sdcf4j.CommandExecutor;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 
 import java.awt.*;
 import java.sql.Time;
@@ -16,6 +16,10 @@ import java.util.Calendar;
 public class RaidCommands implements CommandExecutor
 {
     RaidBot rb;
+
+    String raidCountersPath = "https://pokemongo.gamepress.gg/pokemon/";
+    String raidCountersPathEnd = "#raid-boss-counters";
+    String pokemonThumbnail= "https://pokemongo.gamepress.gg/sites/default/files/styles/240w/public/2016-07/";
 
     public RaidCommands(RaidBot rb)
     {
@@ -71,12 +75,21 @@ public class RaidCommands implements CommandExecutor
             @Override
             public void onSuccess(Channel channel)
             {
+                JSONObject jsonObj = Data._singleton.getPokemonDataByName(pokemonName);
+                int id = Integer.parseInt(jsonObj.get("id").toString());
+                JSONArray typesArray = (JSONArray)jsonObj.get("types");
+                String counterUrl = raidCountersPath + id + raidCountersPathEnd;
+                String thumbnailUrl = pokemonThumbnail + id + ".png";
+                System.out.println(thumbnailUrl);
+                String typeString = Data._singleton.getPokemonTypeString(typesArray);
+                String weaknessesString = Data._singleton.getPokemonWeaknessesString(typesArray);
                 EmbedBuilder embed = new EmbedBuilder();
-                embed.setAuthor("Kiin Bot");
-                //embed.setThumbnail("data\\images\\raid_icon.png");
-                //embed.setThumbnail(new File("data\\images\\raid_icon.png").toURI().toURL().toString());
-                embed.addField("Counter Information", "This is information for this field.", false);
-                embed.setColor(Color.BLUE);
+                embed.setAuthor(pokemonName);
+                embed.setThumbnail(thumbnailUrl);
+                embed.addField("Counter Information", "["+ pokemonName +" Counters](" + counterUrl + ")", false);
+                embed.addField("Types", typeString, true);
+                //embed.addField("Weaknesses", weaknessesString, true);
+                embed.setColor(Color.CYAN);
                 //embed.setDescription("This is a description.");
                 //embed.setFooter("This is a footer.");
                 //embed.setTitle("This is the title.");

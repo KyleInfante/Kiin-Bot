@@ -19,6 +19,7 @@ public class Data {
     protected JSONArray raidPokemonList;
     protected JSONObject pokemonList;
     protected JSONObject pokeTypesList;
+    protected JSONObject pokemonTypeEmojis;
     protected Role adminRole;
     protected Role instinctRole;
     protected Role mysticRole;
@@ -47,6 +48,7 @@ public class Data {
 
         getRoleData();
         getTypesData();
+        getTypeEmojis();
         update();
     }
 
@@ -78,7 +80,7 @@ public class Data {
     public String FindRaidPokemonName(String name)
     {
         String pName = "";
-        int index = raidPokemonList.indexOf(name);
+        int index = raidPokemonList.indexOf(name.toLowerCase());
         System.out.println(index);
         if(index != -1)
         {
@@ -168,6 +170,12 @@ public class Data {
         pokeTypesList = (JSONObject)jsonObj.get("types");
     }
 
+    private void getTypeEmojis()
+    {
+        JSONObject jsonObj = getJSON("data\\configs\\appdata.json");
+        pokemonTypeEmojis  = (JSONObject)jsonObj.get("icons");
+    }
+
     /**
      * Read pokemon.json file for the raids pokemon and adds that list to raidPokemonList array
      */
@@ -176,6 +184,30 @@ public class Data {
         JSONObject jsonObj = getJSON("data\\pokemondata\\pokemon.json");
         raidPokemonList = (JSONArray)jsonObj.get("raids");
         pokemonList = (JSONObject)jsonObj.get("pokemon_list");
+    }
+
+    public String getPokemonTypeString(JSONArray arr)
+    {
+        StringBuilder sb = new StringBuilder("");
+        for(int i = 0; i < arr.size(); i++)
+        {
+            String s = pokemonTypeEmojis.get(arr.get(i)).toString();
+            sb.append(s + " ");
+        }
+        return sb.toString().trim();
+    }
+
+    public String getPokemonWeaknessesString(JSONArray arr)
+    {
+        StringBuilder sb = new StringBuilder("");
+
+        return sb.toString().trim();
+    }
+
+    public JSONObject getPokemonDataByName(String name)
+    {
+        JSONObject obj =  (JSONObject)pokemonList.get(name.toLowerCase());
+        return obj;
     }
 
     /**
