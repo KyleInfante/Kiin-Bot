@@ -200,6 +200,12 @@ public class Data {
     public String getPokemonWeaknessesString(JSONArray arr)
     {
         StringBuilder sb = new StringBuilder("");
+        for(int i = 0; i < arr.size(); i++)
+        {
+            JSONObject obj = (JSONObject)pokeTypesList.get(arr.get(i));
+
+        }
+
 
         return sb.toString().trim();
     }
