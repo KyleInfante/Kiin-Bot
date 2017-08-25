@@ -3,6 +3,7 @@ package com.kinfante.kiinbot;
 import de.btobastian.javacord.entities.Channel;
 import de.btobastian.javacord.entities.User;
 import de.btobastian.javacord.entities.message.Message;
+import de.btobastian.javacord.entities.message.MessageBuilder;
 import de.btobastian.sdcf4j.Command;
 import de.btobastian.sdcf4j.CommandExecutor;
 import java.sql.Time;
@@ -32,7 +33,7 @@ public class RaidChannel implements CommandExecutor
         String omwMsg = "";
         if(c == this.channel && !IsOTW(user))
         {
-            omwMsg = user.getName() + " is on the way. ";
+            omwMsg = user.getName() + " is on the way.  ";
             if(args.length > 0 && args[0].length() <= 2)
             {
                 try {
@@ -60,48 +61,49 @@ public class RaidChannel implements CommandExecutor
     public String onOtw(String command, String[] args, Channel c, Message msg)
     {
 
-        StringBuilder sb = new StringBuilder("");
-
+        MessageBuilder mb = new MessageBuilder();
+        mb.append("```\n");
         if(c == this.channel)
         {
-            String otwMsg = "There are " + onTheWay.size() + " trainers on the way!\n============================\n";
+            String otwMsg = "There are " + onTheWay.size() + " trainers on the way!\n--------------------------------\n";
             if(onTheWay.size() == 1)
-                otwMsg = "There is " + onTheWay.size() + " trainer on the way!\n============================\n";
+                otwMsg = "There is " + onTheWay.size() + " trainer on the way!\n--------------------------------\n";
             else if(onTheWay.size() == 0)
                 otwMsg = "There are no trainers on the way!\n";
-            sb.append(otwMsg);
+            mb.append(otwMsg);
             UpdateOtwTimes();
 
             for(int i = 0 ;  i < onTheWay.size(); i++)
             {
-                sb.append(onTheWay.get(i).getName());
+                mb.append(onTheWay.get(i).getName());
                 if(otwEtas.get(i) != null)
                 {
                     int eta = otwEtas.get(i);
                     switch(eta)
                     {
                         case(0): {
-                            sb.append(" should be close.\n");
+                            mb.append(" should be close.\n");
                             break;
                         }
                         case(1): {
-                            sb.append(" in " + eta + " minute.\n");
+                            mb.append(" in " + eta + " minute.\n");
                             break;
                         }
                         default: {
-                            sb.append(" in " + eta + " minutes.\n");
+                            mb.append(" in " + eta + " minutes.\n");
                             break;
                         }
                     }
                 }
                 else
                 {
-                    sb.append("\n");
+                    mb.append("\n");
                 }
             }
         }
+        mb.append("```");
         msg.delete();
-        return sb.toString();
+        return mb.toString();
     }
 
     @Command(aliases = {"!here", "!h"}, description = "I am here at the raid!")

@@ -8,6 +8,7 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
+import javax.xml.crypto.dsig.keyinfo.KeyValue;
 import java.io.FileReader;
 import java.io.InputStream;
 import java.util.*;
@@ -81,7 +82,7 @@ public class Data {
     {
         String pName = "";
         int index = raidPokemonList.indexOf(name.toLowerCase());
-        System.out.println(index);
+
         if(index != -1)
         {
             pName = raidPokemonList.get(index).toString();
@@ -97,7 +98,7 @@ public class Data {
                 pName = pName.substring(0,1).toUpperCase() + pName.substring(1);
             }
         }
-        System.out.println(pName);
+
         return pName;
     }
 
@@ -166,8 +167,7 @@ public class Data {
 
     private void getTypesData()
     {
-        JSONObject jsonObj = getJSON("data\\pokemondata\\types.json");
-        pokeTypesList = (JSONObject)jsonObj.get("types");
+        pokeTypesList = getJSON("data\\pokemondata\\types.json");
     }
 
     private void getTypeEmojis()
@@ -197,16 +197,54 @@ public class Data {
         return sb.toString().trim();
     }
 
+    /**
+     * Find the weakness types given an array of types.
+     * @param arr JSONArray of the pokemon types
+     * @return string value of the type icon emojis
+     */
     public String getPokemonWeaknessesString(JSONArray arr)
     {
         StringBuilder sb = new StringBuilder("");
+        HashMap<String, Integer> typesAndValues = new HashMap<String, Integer>();
+
+        //Loop through each pokemon type
         for(int i = 0; i < arr.size(); i++)
         {
-            JSONObject obj = (JSONObject)pokeTypesList.get(arr.get(i));
+            String typeName = arr.get(i).toString();
 
+            //get the key names under each type
+            JSONObject set = (JSONObject)pokeTypesList.get(typeName);
+            Set<String> keySet =  set.keySet();
+
+            //Get the values for each key
+            Iterator<String> it = keySet.iterator();
+            while(it.hasNext())
+            {
+                String keyName = it.next();
+                if(typesAndValues.keySet().contains(keyName))
+                {
+                    //Add the values together and add the new values to the list
+                    int val = Integer.parseInt(typesAndValues.get(keyName).toString());
+                    val += Integer.parseInt(set.get(keyName).toString());
+                    typesAndValues.replace(keyName, val);
+                }
+                else
+                {
+                    int val = Integer.parseInt(set.get(keyName).toString());
+                    //Simply add the new  KeyValuePair to the list
+                    typesAndValues.put(keyName, val);
+                }
+            }
+        }
+        JSONArray resultsArr = new JSONArray();
+        Iterator<String> resultKeys = typesAndValues.keySet().iterator();
+        while(resultKeys.hasNext()) {
+            String key = resultKeys.next();
+            if (typesAndValues.get(key) > 0)
+                resultsArr.add(key);
         }
 
-
+        sb.append(getPokemonTypeString(resultsArr));
         return sb.toString().trim();
     }
 

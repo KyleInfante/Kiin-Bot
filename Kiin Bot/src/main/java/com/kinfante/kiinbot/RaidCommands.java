@@ -3,6 +3,7 @@ package com.kinfante.kiinbot;
 import com.google.common.util.concurrent.FutureCallback;
 import de.btobastian.javacord.entities.Channel;
 import de.btobastian.javacord.entities.message.Message;
+import de.btobastian.javacord.entities.message.MessageBuilder;
 import de.btobastian.javacord.entities.message.embed.EmbedBuilder;
 import de.btobastian.sdcf4j.Command;
 import de.btobastian.sdcf4j.CommandExecutor;
@@ -43,7 +44,7 @@ public class RaidCommands implements CommandExecutor
 
         String time = args[args.length - 1].replace(":", "");
         int length = time.length();
-        time = ("0000" + time).substring(time.length());
+        time = ("0000" + time).substring(length);
         int minutes = Integer.parseInt(time.substring(2, 4));
         int hours = Integer.parseInt(time.substring(0,2));
         minutes += (hours * 60);
@@ -82,30 +83,36 @@ public class RaidCommands implements CommandExecutor
                 String thumbnailUrl = pokemonThumbnail + id + ".png";
                 String typeString = Data._singleton.getPokemonTypeString(typesArray);
                 String weaknessesString = Data._singleton.getPokemonWeaknessesString(typesArray);
+
                 EmbedBuilder embed = new EmbedBuilder();
                 embed.setTitle(pokemonName + " Raid Information");
                 embed.setThumbnail(thumbnailUrl);
-                embed.addField("Counter Information", "["+ pokemonName +" Counters](" + counterUrl + ")", false);
-                embed.addField("Types", typeString, false);
-                //embed.addField("Weaknesses", weaknessesString, true);
+                embed.addField("Types", typeString, true);
+                embed.addField("Weaknesses", weaknessesString, true);
                 embed.setColor(Color.CYAN);
-                //embed.setDescription("This is a description.");
-                //embed.setFooter("This is a footer.");
-                //embed.setTitle("This is the title.");
-                //embed.setUrl("www.google.com");
-                /*MessageBuilder message = new MessageBuilder();
-                message.append("A " + pokemonName + " raid has been spotted at " + location + "!\n");
-                message.append("```css\n");
-                message.appendDecoration()
-                message.append("Commands for this raid channel:\n");
-                message.append(String.format("%-10s %s", "!omw ##", "RSVP to the raid with an optional eta time in minutes.\n"));
-                message.append(String.format("%-10s %s", "!otw", "View who has RSVP'd with eta times.\n"));
-                message.append(String.format("%-10s %s", "!here", "#ou have arrived at the raid location.  Taking you off of the RSVP list.\n"));
-                message.append(String.format("%-10s %s", "!cancel", "Cancel your RSVP.  You are no longer going to attend the raid.```\n"));
-                message.append("```\n");
+                embed.setDescription("["+ pokemonName +" Counters](" + counterUrl + ")");
                 channel.updateTopic(pokemonName + " raid located at " + location + " until ~" + exprTime);
-                channel.sendMessage( message.toString() );*/
-                channel.sendMessage("A " + pokemonName + " raid has been spotted at " + location + "!", embed);
+                channel.sendMessage("@everyone A " + pokemonName + " raid has been spotted at " + location + "!", embed, new FutureCallback<Message>() {
+                    @Override
+                    public void onSuccess(Message message) {
+                        MessageBuilder m = new MessageBuilder();
+                        m.append("```\n");
+                        m.append("Raid Channel Commands\n");
+                        m.append(String.format("%-10s %s", "!omw ##", "RSVP to the raid with optional ETA time.\n"));
+                        m.append(String.format("%-10s %s", "!otw", "View who is on the way.\n"));
+                        m.append(String.format("%-10s %s", "!here", "You have arrived at the raid. Taking you off of the RSVP list.\n"));
+                        m.append(String.format("%-10s %s", "!cancel", "Cancel your RSVP.\n"));
+                        m.append("```\n");
+
+                        channel.sendMessage(m.toString());
+                    }
+
+                    @Override
+                    public void onFailure(Throwable throwable) {
+                        throwable.printStackTrace();
+                    }
+                });
+
                 RaidChannel t = new RaidChannel();
                 rb.EnableChannelCommands(t);
                 t.SetTimer(minutes, channel);
@@ -147,6 +154,16 @@ public class RaidCommands implements CommandExecutor
             location += " " + args[i];
         }
 
-        return location;
+        char[] tempName = location.toCharArray();
+        String retVal = "";
+        for(int i = 0 ; i < tempName.length; i++)
+        {
+            if(Character.isAlphabetic(tempName[i]) || tempName[i] == ' ')
+            {
+                retVal += tempName[i];
+            }
+        }
+
+        return retVal;
     }
 }
