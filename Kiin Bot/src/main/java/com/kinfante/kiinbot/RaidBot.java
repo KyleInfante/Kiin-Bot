@@ -27,6 +27,8 @@ public class RaidBot {
         api.connect(new FutureCallback<DiscordAPI>() {
             public void onSuccess(DiscordAPI discordAPI) {
                 System.out.println("Kiin is online!");
+
+                //Now we can grab the other pokemon data from the JSON files.
                 Data._singleton.init();
                 EnableCommands();
             }

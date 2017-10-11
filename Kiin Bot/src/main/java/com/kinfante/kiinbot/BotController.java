@@ -14,12 +14,17 @@ public class BotController
 
     public BotController()
     {
-        //Stores the data into this object
+        //Initialize the Data object
         Data data = new Data();
         data.initApi();
         api = data.getApi();
+
+        //Data singleton has been generated here, so continue to use the singleton to reference the current Data object
     }
 
+    /**
+     * Called from KiinGo main function
+     */
     public void StartRaidBot()
     {
         RaidBot raidBot = new RaidBot(api);

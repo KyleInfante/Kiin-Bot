@@ -15,10 +15,11 @@ import java.util.concurrent.TimeUnit;
 
 public class RaidChannel implements CommandExecutor
 {
-        Channel channel;
-        ArrayList<User> onTheWay;
-        ArrayList<Integer> otwEtas;
-        ArrayList<Time> timeOtw;
+        private Channel channel;
+        private ArrayList<User> onTheWay;
+        private ArrayList<Integer> otwEtas;
+        private ArrayList<Time> timeOtw;
+        private Raid raid;
 
     public RaidChannel()
     {
@@ -27,11 +28,12 @@ public class RaidChannel implements CommandExecutor
         timeOtw = new ArrayList<>();
     }
 
-    @Command(aliases = {"!omw"}, description = "On my way!")
-    public String onOmw(String command, String[] args, User user, Channel c, Message msg)
+    @Command(aliases = {"!coming" , "!c"}, description = "On my way!")
+    public String onOmw(String[] args, Channel c, Message msg, User user)
     {
         String omwMsg = "";
-        if(c == this.channel && !IsOTW(user))
+        msg.delete();
+        if(c == this.channel && !onTheWay.contains(user))
         {
             omwMsg = user.getName() + " is on the way.  ";
             if(args.length > 0 && args[0].length() <= 2)
@@ -53,12 +55,12 @@ public class RaidChannel implements CommandExecutor
             Time t = new Time(Calendar.getInstance().getTime().getTime());
             timeOtw.add(t);
         }
-        msg.delete();
+
         return omwMsg;
     }
 
-    @Command(aliases = {"!otw"}, description = "Who's on the way!?")
-    public String onOtw(String command, String[] args, Channel c, Message msg)
+    @Command(aliases = {"!who", "!w"}, description = "Who's on the way!?")
+    public String onOtw(Channel c, Message msg)
     {
 
         MessageBuilder mb = new MessageBuilder();
@@ -107,13 +109,13 @@ public class RaidChannel implements CommandExecutor
     }
 
     @Command(aliases = {"!here", "!h"}, description = "I am here at the raid!")
-    public String onHere(String command, String[] args, Channel c, Message msg, User user)
+    public String onHere(Channel c, Message msg, User user)
     {
         msg.delete();
         String hereMsg = "";
         if(c == this.channel && onTheWay.contains(user))
         {
-            int i = getOtwIndex(user);
+            int i = onTheWay.indexOf(user);
             if(i == -1) return "";
             onTheWay.remove(i);
             otwEtas.remove(i);
@@ -123,21 +125,68 @@ public class RaidChannel implements CommandExecutor
         return hereMsg;
     }
 
-    @Command(aliases = {"!cancel", "!c"}, description = "I will not be able to make it.")
-    public String onCancel(String command, String[] args, Channel c, Message msg, User user)
+    @Command(aliases = {"!cancel"}, description = "I will not be able to make it.")
+    public String onCancel(Channel c, Message msg, User user)
     {
         msg.delete();
         String cancelMsg = "";
         if(c == this.channel && onTheWay.contains(user))
         {
-            int i = getOtwIndex(user);
+            int i = onTheWay.indexOf(user);
             if(i == -1) return "";
             onTheWay.remove(i);
             otwEtas.remove(i);
             timeOtw.remove(i);
-            cancelMsg = user.getName() + " is no longer on the way";
+            cancelMsg = user.getName() + " will no longer be able to make.";
         }
         return cancelMsg;
+    }
+
+    @Command(aliases = {"!update", "!u"}, description = "Update Pokemon's name." )
+    public String onUpdate(Channel c, Message msg, String[] args, User u)
+    {
+        String pokemonName;
+        String returnMessage;
+
+        if(raid.getPokemonName() != null)
+        {
+            return "This raid has already been updated with a Pokemon Name.";
+        }
+
+        //Lets make sure it isn't an egg again.
+        if(args[0].equalsIgnoreCase("egg3") || args[0].equalsIgnoreCase("egg4") || args[0].equalsIgnoreCase("egg5"))
+        {
+            return "Uh, this pokemon can't be an egg again...";
+        }
+
+        if(c == this.channel && (args.length == 1 || args.length == 2))
+        {
+            pokemonName = Data._singleton.getPokemonName(args);
+
+            if(!pokemonName.equalsIgnoreCase(""))
+            {
+                raid.setAwaitingUpdate(false);
+                raid.setPokemonName(pokemonName);
+                channel.update(raid.getChannelName(),
+                        raid.getChannelTopic(),
+                        channel.getPosition()
+                );
+                raid.sendEmbeddedRaidMessage(channel);
+                returnMessage = u.getName() + " has updated this Pokemon's name to " + pokemonName;
+            }
+            else
+            {
+                returnMessage = "The Pokemon name provided is invalid.  Please check your spelling.";
+            }
+        }
+        else
+        {
+            returnMessage = "This command is invalid. Try typing it like this, \"!update pokemonName\"";
+        }
+
+        msg.delete();
+
+        return returnMessage;
     }
 
     /**
@@ -145,11 +194,18 @@ public class RaidChannel implements CommandExecutor
      * @param minutes number of minutes this channel will remain up
      * @param channel this channel
      */
-    public void SetTimer(int minutes, Channel channel)
+    public void setTimer(int minutes, Channel channel)
     {
         this.channel = channel;
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(8);
-        scheduler.schedule(() -> { DeleteChannel(); return null; }, minutes, TimeUnit.MINUTES);
+        if(!raid.isEgg())
+        {
+            scheduler.schedule(() -> { DeleteChannel(); return null; }, minutes, TimeUnit.MINUTES);
+        }
+        else
+        {
+            scheduler.schedule(() -> { EggToPokemonChannel(); return null; }, minutes, TimeUnit.MINUTES);
+        }
     }
 
     /**
@@ -167,24 +223,19 @@ public class RaidChannel implements CommandExecutor
         }
     }
 
-    private int getOtwIndex(User user)
+    private void EggToPokemonChannel()
     {
-        for(int i = 0; i < onTheWay.size(); i++)
-        {
-            if(onTheWay.get(i) == user)
-                return i;
-        }
-        return -1;
-    }
+        raid.setIsEgg(false);
+        raid.setAwaitingUpdate(true);
+        raid.setExprTime(Data.getExpireTime(60));
 
-    private boolean IsOTW(User user)
-    {
-        for(User u : onTheWay)
-        {
-            if(u == user) return true;
-        }
-
-        return false;
+        channel.update(
+                raid.getChannelName(),
+                raid.getChannelTopic(),
+                channel.getPosition()
+        );
+        channel.sendMessage(raid.getHatchedMessage());
+        setTimer(60, channel);
     }
 
     private void UpdateOtwTimes()
@@ -208,5 +259,9 @@ public class RaidChannel implements CommandExecutor
                 otwEtas.set(i, newMinutes);
             }
         }
+    }
+
+    public void setRaidObject(Raid raidObject) {
+        this.raid = raidObject;
     }
 }

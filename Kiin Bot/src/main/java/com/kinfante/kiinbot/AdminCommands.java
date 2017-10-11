@@ -14,8 +14,8 @@ public class AdminCommands implements CommandExecutor {
     public String onAdminUpdateCommand(String command, String[] args, User user)
     {
         String msg = "";
-        Collection<Role> roles = user.getRoles(Data._singleton.server);
-        if(roles.contains(Data._singleton.adminRole))
+        Collection<Role> roles = user.getRoles(Data._singleton.getServer());
+        if(roles.contains(Data._singleton.getAdminRole()))
         {
             Data._singleton.update();
             msg = "Pokemon raid list has been successfully updated!";

@@ -7,115 +7,131 @@ import de.btobastian.javacord.entities.message.MessageBuilder;
 import de.btobastian.javacord.entities.message.embed.EmbedBuilder;
 import de.btobastian.sdcf4j.Command;
 import de.btobastian.sdcf4j.CommandExecutor;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 
-import java.awt.*;
 import java.sql.Time;
-import java.util.Calendar;
 
 public class RaidCommands implements CommandExecutor
 {
-    RaidBot rb;
+    private RaidBot rb;
 
-    String raidCountersPath = "https://pokemongo.gamepress.gg/pokemon/";
-    String raidCountersPathEnd = "#raid-boss-counters";
-    String pokemonThumbnail= "https://poketoolset.com/assets/img/pokemon/images/";
-
-    public RaidCommands(RaidBot rb)
+    RaidCommands(RaidBot rb)
     {
         this.rb = rb;
     }
 
     @Command(aliases = {"!raid", "!r"}, description = "Raid")
-    public String onRaidCommand(String command, String[] args, Message msg)
+    public String onRaidCommand(String[] args, Message msg)
     {
-        msg.delete();
-
         //make sure raid command has at least 3 arguments
         if(args.length < 3)
             return "Invalid raid command. Try typing your command like this: " +
-                    "\"!raid PokemonName Location TimeLeft\"";
+                    "\"!raid Pokemon Location TimeLeft\"";
 
-        //Get Pokemon Name from list
-        String pokemonName = checkPokemonName(args);
-        if(pokemonName == "")
-            return "The Pokemon is not in the raid list. Be sure to check your spelling.";
+        //Delete the user's message if the command was successful.
+        msg.delete();
 
+        //Get the Time until the egg/pokemon hatches/despawns
         String time = args[args.length - 1].replace(":", "");
         int length = time.length();
         time = ("0000" + time).substring(length);
-        int minutes = Integer.parseInt(time.substring(2, 4));
-        int hours = Integer.parseInt(time.substring(0,2));
-        minutes += (hours * 60);
+        int minutes;
+        minutes = -1;
+        try
+        {
+            minutes = Integer.parseInt(time.substring(2, 4));
+            int hours = Integer.parseInt(time.substring(0,2));
+            minutes += (hours * 60);
+        }
+        catch(Exception e)
+        {
+            time = null;
+        }
 
-        //Get expire time
-        Calendar cal = Data._singleton.getTime(minutes);
-
-        if(time == null || length > 4)
+        //Make sure time is in correct format
+        if(time == null ||length > 4)
             return "Time is in the wrong format.  Try typing it like this \"HHmm\" or \"HH:mm\"";
 
-        //Time cannot be larger than two hours.
-        if(minutes > 120) return "The time left should never be larger than 2 hours.";
+        //Time cannot be larger than an hour, since Eggs and Pokemon only last that long.
+        if(minutes > 60) return "The time left should never be larger than an hour.";
 
-        Time exprTime = new Time(cal.getTime().getTime());
+        //Get hatch/despawn time
+        Time exprTime = Data.getExpireTime(minutes);
+
+        //Get Pokemon Name from JSON list
+        String pokemonName = Data._singleton.getPokemonName(args);
+        if(pokemonName.equalsIgnoreCase("")) return "The Pokemon is not in the raid list. Be sure to check your spelling.";
+
+        //Is it an Egg?
+        boolean isEgg = (pokemonName.equalsIgnoreCase("egg3") || pokemonName.equalsIgnoreCase("egg4") || pokemonName.equalsIgnoreCase("egg5"));
 
         //Get location
         int index = pokemonName.split(" ").length;
         String loc = checkLocation(args, index);
 
+        Raid r;
+
+        //Do different things based on if its an Egg or not.
+        if(isEgg)
+        {
+            //Grab the last digit off of the pokemon name if its an egg (egg3, egg4, egg5)
+            String level = pokemonName.substring(pokemonName.length() - 1, pokemonName.length());
+            r = new Raid(Integer.parseInt(level));
+        }
+        else
+        {
+            r = new Raid(pokemonName);
+        }
+
+        r.setLocation(loc);
+        r.setExprTime(exprTime);
+
         //Now build the channel
-        BuildRaidChannel(pokemonName, loc, exprTime, minutes);
+        BuildRaidChannel(r, minutes);
         return "";
     }
 
-    private void BuildRaidChannel(String pokemonName, String location, Time exprTime, int minutes)
+    /**
+     * After a raid command has been successful.  This function will be called.
+     * Creates the Text Channel in Discord and provides information about the raid and starts the timer.
+     * @param raid The raid object that contains the Raid's current state
+     */
+    private void BuildRaidChannel(Raid raid, int minutes)
     {
-        String channelName = "raid_" + pokemonName.replace(" ", "_") + "_" + location.replace(" ", "_");
-        Data._singleton.server.createChannel(channelName, new FutureCallback<Channel>() {
+        String channelName;
+        boolean isEgg = raid.isEgg();
+        String location = raid.getLocation();
+        String pokemonName = raid.getPokemonName();
+
+        //Change Channel Name based on if it's an egg or not
+        if(isEgg)
+        {
+            channelName = "Egg_LV" + raid.getEggLevel() + "_" + location.replace(" ", "_");
+        }
+        else
+        {
+            channelName = pokemonName.replace(" ", "_") + "_" + location.replace(" ", "_");
+        }
+
+        Data._singleton.getServer().createChannel(channelName, new FutureCallback<Channel>() {
+
             @Override
             public void onSuccess(Channel channel)
             {
-                JSONObject jsonObj = Data._singleton.getPokemonDataByName(pokemonName);
-                int id = Integer.parseInt(jsonObj.get("id").toString());
-                JSONArray typesArray = (JSONArray)jsonObj.get("types");
-                String counterUrl = raidCountersPath + id + raidCountersPathEnd;
-                String thumbnailUrl = pokemonThumbnail + id + ".png";
-                String typeString = Data._singleton.getPokemonTypeString(typesArray);
-                String weaknessesString = Data._singleton.getPokemonWeaknessesString(typesArray);
+                channel.updateTopic(raid.getChannelTopic());
 
-                EmbedBuilder embed = new EmbedBuilder();
-                embed.setTitle(pokemonName + " Raid Information");
-                embed.setThumbnail(thumbnailUrl);
-                embed.addField("Types", typeString, true);
-                embed.addField("Weaknesses", weaknessesString, true);
-                embed.setColor(Color.CYAN);
-                embed.setDescription("["+ pokemonName +" Counters](" + counterUrl + ")");
-                channel.updateTopic(pokemonName + " raid located at " + location + " until ~" + exprTime);
-                channel.sendMessage("@everyone A " + pokemonName + " raid has been spotted at " + location + "!", embed, new FutureCallback<Message>() {
-                    @Override
-                    public void onSuccess(Message message) {
-                        MessageBuilder m = new MessageBuilder();
-                        m.append("```\n");
-                        m.append("Raid Channel Commands\n");
-                        m.append(String.format("%-10s %s", "!omw ##", "RSVP to the raid with optional ETA time.\n"));
-                        m.append(String.format("%-10s %s", "!otw", "View who is on the way.\n"));
-                        m.append(String.format("%-10s %s", "!here", "You have arrived at the raid. Taking you off of the RSVP list.\n"));
-                        m.append(String.format("%-10s %s", "!cancel", "Cancel your RSVP.\n"));
-                        m.append("```\n");
-
-                        channel.sendMessage(m.toString());
-                    }
-
-                    @Override
-                    public void onFailure(Throwable throwable) {
-                        throwable.printStackTrace();
-                    }
-                });
+                if(isEgg)
+                {
+                    channel.sendMessage(raid.getRaidStartMessage());
+                }
+                else
+                {
+                    raid.sendEmbeddedRaidMessage(channel);
+                }
 
                 RaidChannel t = new RaidChannel();
                 rb.EnableChannelCommands(t);
-                t.SetTimer(minutes, channel);
+                t.setRaidObject(raid);
+                t.setTimer(minutes,channel);
             }
 
             @Override
@@ -125,32 +141,11 @@ public class RaidCommands implements CommandExecutor
         });
     }
 
-    /**
-     * Checking the pokemon name if it exists in the raid list.
-     * If it doesn't, it will check if the pokemon is a two worded name
-     * @param args the list of arguments in the raid command.
-     * @return the pokemon name
-     */
-    private String checkPokemonName(String[] args)
-    {
-        //Check for single worded name
-        String pokemonName = Data._singleton.FindRaidPokemonName(args[0]);
-
-        //Check if not found, check for two worded name
-        if(args.length > 3 && pokemonName == "")
-        {
-            pokemonName = Data._singleton.FindRaidPokemonName(args[0] + " " + args[1]);
-        }
-
-        return pokemonName;
-    }
-
     private String checkLocation(String[] args, int index)
     {
-        String location = args[index];
-        index++;
+        String location = args[index++];
         for(int i = index; i < args.length - 1; i++)
-            {
+        {
             location += " " + args[i];
         }
 
@@ -166,4 +161,5 @@ public class RaidCommands implements CommandExecutor
 
         return retVal;
     }
+
 }

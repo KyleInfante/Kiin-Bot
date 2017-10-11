@@ -8,26 +8,34 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
-import javax.xml.crypto.dsig.keyinfo.KeyValue;
 import java.io.FileReader;
-import java.io.InputStream;
+import java.sql.Time;
 import java.util.*;
 
 public class Data {
 
     protected static Data _singleton;
 
-    protected JSONArray raidPokemonList;
-    protected JSONObject pokemonList;
-    protected JSONObject pokeTypesList;
-    protected JSONObject pokemonTypeEmojis;
-    protected Role adminRole;
-    protected Role instinctRole;
-    protected Role mysticRole;
-    protected Role valorRole;
-    protected Server server;
+    private JSONArray raidPokemonList;
+    private JSONObject pokemonList;
+    private JSONObject pokeTypesList;
+    private JSONObject pokemonTypeEmojis;
+    private Role adminRole;
+    private Role instinctRole;
+    private Role mysticRole;
+    private Role valorRole;
+    private Server server;
     private DiscordAPI api;
-    private String botToken;
+
+    //region Getters/Setters
+    public Server getServer() {
+        return server;
+    }
+
+    public Role getAdminRole(){
+        return adminRole;
+    }
+    //endregion
 
     public Data()
     {
@@ -38,9 +46,24 @@ public class Data {
     }
 
     /**
-     * Runs on the start of the bot
+     * Called by the BotController constructor
+     * Initialized the api object.
+     * Gets the bot token from the auth.json file and authenticates to discord with it.
+     * We need authentication before we turn on the bot
      */
-    public void init()
+    public void initApi()
+    {
+        JSONObject jsonObj = getJSON("data\\configs\\auth.json");
+        String botToken = jsonObj.get("bot-token").toString();
+        api = Javacord.getApi(botToken, true);
+        api.setGame("Pokemon GO");
+    }
+
+    /**
+     * Runs on the start of the bot
+     * Grabs all of the necessary data from the JSON files.
+     */
+    void init()
     {
         //Get the server object
         Collection<Server> collS = api.getServers();
@@ -53,19 +76,7 @@ public class Data {
         update();
     }
 
-    /**
-     * Initialized the api object.
-     * Gets the bot token from the auth.json file and authenticates to discord with it.
-     */
-    public void initApi()
-    {
-        JSONObject jsonObj = getJSON("data\\configs\\auth.json");
-        botToken = jsonObj.get("bot-token").toString();
-        api = Javacord.getApi(botToken, true);
-        api.setGame("Pokemon GO");
-    }
-
-    public DiscordAPI getApi()
+    DiscordAPI getApi()
     {
         return api;
     }
@@ -73,45 +84,73 @@ public class Data {
     /**
      * Parse the pokemon.json and types.json
      */
-    public void update()
+    void update()
     {
         getRaidPokemonData();
     }
 
-    public String FindRaidPokemonName(String name)
+    /**
+     * Called from RaidCommands
+     * @param args arguments in the command
+     * @return String of PokemonName, "" if it doesn't exist
+     */
+    String getPokemonName(String[] args)
     {
-        String pName = "";
-        int index = raidPokemonList.indexOf(name.toLowerCase());
+        String name = args[0].toLowerCase();
 
-        if(index != -1)
+        //Automatically return if is an egg
+        if(name.equalsIgnoreCase("egg3") || name.equalsIgnoreCase("egg4") || name.equalsIgnoreCase("egg5"))
         {
-            pName = raidPokemonList.get(index).toString();
-            String[] splits = pName.trim().split(" ");
-            if(splits.length > 1)
+            return args[0].toLowerCase();
+        }
+
+        //Check if it's a single worded pokemon
+        if(raidPokemonList.contains(name))
+        {
+            return capitalize(name);
+        }
+
+        if(args.length > 1)
+        {
+            //Check if it's a two worded name
+            name = args[0].toLowerCase() + " " + args[1].toLowerCase();
+            if(raidPokemonList.contains(name))
             {
-                String first = splits[0].substring(0,1).toUpperCase() + splits[0].substring(1);
-                String second = splits[1].substring(0,1).toUpperCase() + splits[1].substring(1);
-                pName = first + " " + second;
-            }
-            else
-            {
-                pName = pName.substring(0,1).toUpperCase() + pName.substring(1);
+                return capitalize(name);
             }
         }
 
-        return pName;
+        return "";
     }
 
     /**
-     * Converts the given time string into hours and minutes, and then adds that time to the current time
+     * Capitalize the first character of each string value separated by a space.
+     * @param text String value we are capitalizing
+     * @return the capitalized string
+     */
+    private static String capitalize(String text)
+    {
+        String[] toks = text.split(" ");
+
+        for(int i = 0; i < toks.length; i++)
+        {
+            String tempStr = toks[i];
+            toks[i] = tempStr.substring(0,1).toUpperCase() + tempStr.substring(1,tempStr.length());
+        }
+
+        String retStr = String.join(" ", toks);
+        return retStr;
+    }
+
+    /**
+     * Get the time a number of minutes ahead from now.
      *
      * @param minutes number of minutes raid will remain up
      * @return time value added to current time.
      */
-    public Calendar getTime(int minutes)
+    static Time getExpireTime(int minutes)
     {
         Calendar cal = Calendar.getInstance();
-
         try
         {
             cal.add(Calendar.MINUTE, minutes);
@@ -122,7 +161,9 @@ public class Data {
             cal = null;
         }
 
-        return cal;
+        long longTime = cal.getTime().getTime();
+
+        return new Time(longTime);
     }
 
     //region  Data Retrieval from JSON files.
@@ -191,8 +232,8 @@ public class Data {
         StringBuilder sb = new StringBuilder("");
         for(int i = 0; i < arr.size(); i++)
         {
-            String s = pokemonTypeEmojis.get(arr.get(i)).toString();
-            sb.append(s + " ");
+            String s = pokemonTypeEmojis.get(arr.get(i)).toString() + " ";
+            sb.append(s);
         }
         return sb.toString().trim();
     }
@@ -202,7 +243,7 @@ public class Data {
      * @param arr JSONArray of the pokemon types
      * @return string value of the type icon emojis
      */
-    public String getPokemonWeaknessesString(JSONArray arr)
+    String getPokemonWeaknessesString(JSONArray arr)
     {
         StringBuilder sb = new StringBuilder("");
         HashMap<String, Integer> typesAndValues = new HashMap<String, Integer>();
@@ -248,17 +289,16 @@ public class Data {
         return sb.toString().trim();
     }
 
-    public JSONObject getPokemonDataByName(String name)
+    JSONObject getPokemonDataByName(String name)
     {
-        JSONObject obj =  (JSONObject)pokemonList.get(name.toLowerCase());
-        return obj;
+        return (JSONObject)pokemonList.get(name.toLowerCase());
     }
 
     /**
      * Grabs configuration data like API Tokens and sensitive information from auth.json file
      * @return JSONObject of the json file.
      */
-    protected JSONObject getJSON(String path)
+    private JSONObject getJSON(String path)
     {
         /*ClassLoader cl = getClass().getClassLoader();
         InputStream stream = cl.getResourceAsStream(path);*/
@@ -274,33 +314,6 @@ public class Data {
         }
 
         return jsonObj;
-    }
-
-    /***
-     * Read given input stream
-     * @param stream the given input stream
-     * @return all of the contents of the file as a String
-     */
-    private String getFileContents(InputStream stream)
-    {
-        StringBuilder contents = new StringBuilder("");
-
-        try
-        {
-            Scanner scanner = new Scanner(stream);
-
-            while(scanner.hasNextLine())
-            {
-                contents.append(scanner.nextLine());
-            }
-            scanner.close();
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-
-        return contents.toString();
     }
     //endregion
 }
